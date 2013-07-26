@@ -7,119 +7,92 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Threading.Tasks;
+using System.Threading;
 
 
 namespace TP_CS
 {
 
-    public class ImageNotReadyException:Exception { }
+    public class ImageNotReadyException : Exception { }
 
     public class FractalGenerator
     {
         private float[] _tabResultComputation;
         byte[] _tabResultImage;
+        Bitmap _resultImage;
 
-        int _width; // Width of the image
-        int _height; // Height of the image
+        protected int _width; // Width of the image
+        protected int _height; // Height of the image
 
-        public event EventHandler generationDone;
+        public Bitmap Image { get { return _resultImage; } }
 
-        bool _invalidate; // Parameters of the image have changed : regenerate image
-
-        public FractalGenerator(int height, int width)
+        public FractalGenerator(int width, int height)
         {
-            this._tabResultComputation = new float[height * width];
-            this._tabResultImage = new byte[height * width];
-
-            this._width = width;
-            this._height = height;
-            this._invalidate = true;
+            init(width, height);
         }
 
-        public FractalGenerator(Size s) : this(s.Height, s.Width) { }
-
-        public FractalGenerator() : this(0, 0) { }
-
-        public Bitmap getImage(RenderingParameters rp)
+        public void init(int width, int height)
         {
-            if (_invalidate) throw new ImageNotReadyException();
+            _tabResultComputation = new float[height * width];
+            _tabResultImage = new byte[4 * height * width];
+            _resultImage = new Bitmap(width, height, PixelFormat.Format32bppRgb);
+            _width = width;
+            _height = height;
+        }
 
-            Bitmap im = new Bitmap(_width, _height, PixelFormat.Format32bppRgb);
+        public FractalGenerator(Size s) : this(s.Width, s.Height) { }
 
-            Rectangle rect = new Rectangle(0, 0, _width, _height);
-            BitmapData bd = im.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, im.PixelFormat);
-
-
-            // Re-use previous Byte array
-            int sizeOfTempTab = bd.Height * bd.Stride;
-            if ( (_tabResultImage == null) || _tabResultImage.Count() != sizeOfTempTab )
-            {
-                _tabResultImage = new byte[sizeOfTempTab];
-            }
+        public void generateImage(RenderingParameters rp, ParallelOptions po)
+        {
 
             int pixelSize = 4;
-   
-            DateTime d1 = DateTime.Now;
+            BitmapData bd;
 
-            Parallel.For(0, _height, j => 
-            {
-                byte valR, valG, valB;
-                float val;
-                int posPixel = bd.Stride * j;
-                for (int i = 0; i < _width; i++)
-                {
-                    val = (float)Math.Log(getValAt(i, j)) * rp.contrast + rp.brightness;
-                    valR = castFloatToByte(val * rp.RedParam, rp.RedExp); 
-                    valG = castFloatToByte(val * rp.GreenParam, rp.GreenExp);
-                    valB = castFloatToByte(val * rp.BlueParam, rp.BlueExp);
-                    _tabResultImage[posPixel + 0] = valB;
-                    _tabResultImage[posPixel + 1] = valG;
-                    _tabResultImage[posPixel + 2] = valR;
-                    posPixel += pixelSize;
-                }
-            });
-
-            Marshal.Copy(_tabResultImage, 0, bd.Scan0, _height * bd.Stride);
-
-
-            im.UnlockBits(bd);
-            return im;
-        }
-
-        private byte castFloatToByte(float val, bool exp)
-        {
-            byte ret;
-            
-            if (exp) val = val * (float)Math.Sqrt(val);
-
-            if (val > byte.MaxValue) 
-                ret = byte.MaxValue;
-            else if (val < 0) 
-                ret = 0;
+            if (po == null) 
+                po = new ParallelOptions();
             else 
-                ret = (byte)val;
-            return ret;
-        }
-        
-        /**
-         * Convert the iteration number in a byte => iteration space to image space
-         * result = log(iter) * contrast + brightness
-         * Do not perform boundary checking
-         **/
-        private float convertValToImage(float iter, float contrast, int brightness)
-        {
-            return (float)Math.Log(iter) * contrast + brightness;
+                po.CancellationToken.ThrowIfCancellationRequested();
+
+            // The image exist and has been created in the generate() function
+            bd = _resultImage.LockBits(new Rectangle(0, 0, _width, _height), System.Drawing.Imaging.ImageLockMode.WriteOnly, _resultImage.PixelFormat);
+
+            try
+            {
+
+                Parallel.For(0, _height, po, j =>
+                {
+                    byte valR, valG, valB;
+                    float val;
+                    int posPixel = bd.Stride * j;
+                    for (int i = 0; i < _width; i++)
+                    {
+                        /**
+                         * Convert the iteration number in a byte => iteration space to image space
+                         * result = log(iter) * contrast + brightness
+                         * log(iter) has already been performed in the generation
+                         * Do not perform boundary checking
+                         **/
+                        val = getValAt(i, j) * rp.contrast + rp.brightness;
+                        valR = castFloatToByte(val * rp.RedParam, rp.RedExp);
+                        valG = castFloatToByte(val * rp.GreenParam, rp.GreenExp);
+                        valB = castFloatToByte(val * rp.BlueParam, rp.BlueExp);
+                        _tabResultImage[posPixel + 0] = valB;
+                        _tabResultImage[posPixel + 1] = valG;
+                        _tabResultImage[posPixel + 2] = valR;
+                        posPixel += pixelSize;
+                    }
+                });
+
+                Marshal.Copy(_tabResultImage, 0, bd.Scan0, _height * bd.Stride);
+            }
+            catch (OperationCanceledException e) { throw e; }
+            finally
+            {
+                _resultImage.UnlockBits(bd);
+            }
         }
 
-        protected float getValAt(int x, int y)
-        {
-            return _tabResultComputation[x + y * _width];
-        }
 
-        protected void setValAt(int x, int y, float val)
-        {
-            _tabResultComputation[x + y * _width] = val;
-        }
 
         /**
          * Julia value computation
@@ -131,12 +104,12 @@ namespace TP_CS
         private float ComputeValAt(Complex z, Complex c, bool smoothing, int N, int maxIter)
         {
             int iter = 0;
-            float value;
+            double value;
             float newReal; // temporary value for the real part of z
-            
+
             // If a one point |z_n| > N, the function is considered divergent. N=2 is enough as a mathematical proof
             // However higher number are used to get a better resolution in the smothing function
-            for (iter = 0; iter < maxIter && z.AbsSq() < N*N; iter++)
+            for (iter = 0; iter < maxIter && z.AbsSq() < N * N; iter++)
             {
                 // z^{n+1} = z^n * z^n + c
                 // also : z.SquareAddIP(c);
@@ -146,27 +119,38 @@ namespace TP_CS
                 z._real = newReal;
             }
 
-            value = (float)iter;
-            
+            value = (double)iter;
+
             //Smoothing :
             // realResult = n - log_p(log(|z_n|/log(N))
             // p = 2 (exponent of z in the julia formulae)
             // n = iteration number achieved during bailout detection
             // N = bailout, bigger number, better results.
-            if(smoothing)
-                value -= (float)Math.Log( Math.Log(Math.Sqrt( z.AbsSq() )/Math.Log(N), 2) );
+            if (smoothing)
+                value -= Math.Log(Math.Log(Math.Sqrt(z.AbsSq()) / Math.Log(N), 2));
 
-            return value;
+            // Do it right away, will speed up the drawing image process
+            return (float)Math.Log(value);
         }
 
-        public void generate(FractalParameters fp, ParallelOptions po)
+        /**
+         * Generate the data. return true if the Image property has been changed.
+         **/
+        public bool generate(FractalParameters fp, CancellationToken? ct)
         {
-            // default value
-            if (po == null) po = new ParallelOptions();
+            bool innerDataChanged = false;
 
-            _tabResultComputation = new float[fp.height * fp.width];
-            _width = fp.width;
-            _height = fp.height;
+            // default value
+            ParallelOptions po = new ParallelOptions();
+            if (ct != null) 
+                po.CancellationToken = (CancellationToken)ct;    
+
+            // If the size of the generation has changed or if it is the first generation
+            if (_tabResultComputation == null || fp.width != _width || fp.height != _height)
+            {
+                init(fp.width, fp.height);
+                innerDataChanged = true;
+            }
 
             float mulX = fp.viewPort.Width / (float)fp.width;
             float mulY = fp.viewPort.Height / (float)fp.height;
@@ -186,6 +170,8 @@ namespace TP_CS
                 maxIter = 255;
             }
 
+            po.CancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 Parallel.For(0, _height, po, j =>
@@ -199,17 +185,44 @@ namespace TP_CS
                     }
                 });
             }
-            catch (OperationCanceledException) {
-                return;
-            }
+            catch (OperationCanceledException e) { throw e; }
 
-            _invalidate = false;
-            if (generationDone != null)
-                generationDone(this, EventArgs.Empty);
-
+            return innerDataChanged;
         }
 
+
+        /**
+         * Small method to convert a float to a Byte, perform boundary checking.
+         * Has a good chance to be inlined since it is very small
+         **/
+        private byte castFloatToByte(float val, bool exp)
+        {
+            byte ret;
+
+            if (exp) val = val * (float)Math.Sqrt(val);
+
+            if (val > byte.MaxValue)
+                ret = byte.MaxValue;
+            else if (val < 0)
+                ret = 0;
+            else
+                ret = (byte)val;
+            return ret;
+        }
+
+
+
+        protected float getValAt(int x, int y)
+        {
+            return _tabResultComputation[x + y * _width];
+        }
+
+        protected void setValAt(int x, int y, float val)
+        {
+            _tabResultComputation[x + y * _width] = val;
+        }
     }
+
 
     public struct FractalParameters
     {

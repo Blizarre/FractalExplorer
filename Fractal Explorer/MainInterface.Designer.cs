@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.pictureBoxFractal = new System.Windows.Forms.PictureBox();
             this.btGenerate = new System.Windows.Forms.Button();
             this.scrollContrast = new System.Windows.Forms.HScrollBar();
             this.label1 = new System.Windows.Forms.Label();
@@ -58,7 +58,7 @@
             this.labBench1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.labBenchMark2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.labValC = new System.Windows.Forms.ToolStripStatusLabel();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxFractal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -68,17 +68,18 @@
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // pictureBox1
+            // fractalPictureBox
             // 
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(795, 675);
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
-            this.pictureBox1.SizeChanged += new System.EventHandler(this.pictureBoxResize);
-            this.pictureBox1.Click += new System.EventHandler(this.zoomImage);
+            this.pictureBoxFractal.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.pictureBoxFractal.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBoxFractal.Location = new System.Drawing.Point(0, 0);
+            this.pictureBoxFractal.Name = "fractalPictureBox";
+            this.pictureBoxFractal.Size = new System.Drawing.Size(795, 675);
+            this.pictureBoxFractal.TabIndex = 0;
+            this.pictureBoxFractal.TabStop = false;
+            this.pictureBoxFractal.SizeChanged += new System.EventHandler(this.onPictureBoxFractalResize);
+            this.pictureBoxFractal.Click += new System.EventHandler(this.EventZoomImage);
+            this.pictureBoxFractal.Paint += new System.Windows.Forms.PaintEventHandler(this.onPictureBoxFractalRepaint);
             // 
             // btGenerate
             // 
@@ -88,7 +89,7 @@
             this.btGenerate.TabIndex = 1;
             this.btGenerate.Text = "Generate";
             this.btGenerate.UseVisualStyleBackColor = true;
-            this.btGenerate.Click += new System.EventHandler(this.EventRegenerate);
+            this.btGenerate.Click += new System.EventHandler(this.onEventRegenerate);
             // 
             // scrollContrast
             // 
@@ -97,7 +98,7 @@
             this.scrollContrast.Size = new System.Drawing.Size(101, 15);
             this.scrollContrast.TabIndex = 2;
             this.scrollContrast.Value = 50;
-            this.scrollContrast.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_redraw);
+            this.scrollContrast.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRedraw);
             // 
             // label1
             // 
@@ -119,17 +120,18 @@
             // 
             // scrollCR
             // 
-            this.scrollCR.Location = new System.Drawing.Point(10, 68);
+            this.scrollCR.Location = new System.Drawing.Point(10, 60);
+            this.scrollCR.Minimum = -100;
             this.scrollCR.Name = "scrollCR";
             this.scrollCR.Size = new System.Drawing.Size(101, 15);
             this.scrollCR.TabIndex = 4;
             this.scrollCR.Value = 12;
-            this.scrollCR.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_regenerate);
+            this.scrollCR.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRegenerate);
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(7, 96);
+            this.label3.Location = new System.Drawing.Point(7, 89);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(39, 13);
             this.label3.TabIndex = 7;
@@ -137,12 +139,13 @@
             // 
             // scrollCI
             // 
-            this.scrollCI.Location = new System.Drawing.Point(8, 109);
+            this.scrollCI.Location = new System.Drawing.Point(8, 103);
+            this.scrollCI.Minimum = -100;
             this.scrollCI.Name = "scrollCI";
             this.scrollCI.Size = new System.Drawing.Size(101, 15);
             this.scrollCI.TabIndex = 6;
             this.scrollCI.Value = 58;
-            this.scrollCI.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_regenerate);
+            this.scrollCI.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRegenerate);
             // 
             // splitContainer1
             // 
@@ -159,7 +162,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.statusStrip1);
-            this.splitContainer1.Panel2.Controls.Add(this.pictureBox1);
+            this.splitContainer1.Panel2.Controls.Add(this.pictureBoxFractal);
             this.splitContainer1.Size = new System.Drawing.Size(937, 675);
             this.splitContainer1.SplitterDistance = 138;
             this.splitContainer1.TabIndex = 8;
@@ -234,7 +237,7 @@
             this.ckExpBlue.TabIndex = 21;
             this.ckExpBlue.Text = "Non-Linear";
             this.ckExpBlue.UseVisualStyleBackColor = true;
-            this.ckExpBlue.Click += new System.EventHandler(this.EventRedraw);
+            this.ckExpBlue.Click += new System.EventHandler(this.onEventRedraw);
             // 
             // ckExpGreen
             // 
@@ -245,7 +248,7 @@
             this.ckExpGreen.TabIndex = 20;
             this.ckExpGreen.Text = "Non-Linear";
             this.ckExpGreen.UseVisualStyleBackColor = true;
-            this.ckExpGreen.Click += new System.EventHandler(this.EventRedraw);
+            this.ckExpGreen.Click += new System.EventHandler(this.onEventRedraw);
             // 
             // ckExpRed
             // 
@@ -256,7 +259,7 @@
             this.ckExpRed.TabIndex = 19;
             this.ckExpRed.Text = "Non-Linear";
             this.ckExpRed.UseVisualStyleBackColor = true;
-            this.ckExpRed.Click += new System.EventHandler(this.EventRedraw);
+            this.ckExpRed.Click += new System.EventHandler(this.onEventRedraw);
             // 
             // scrollRed
             // 
@@ -266,7 +269,7 @@
             this.scrollRed.Size = new System.Drawing.Size(101, 15);
             this.scrollRed.TabIndex = 17;
             this.scrollRed.Value = 25;
-            this.scrollRed.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_redraw);
+            this.scrollRed.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRedraw);
             // 
             // label7
             // 
@@ -285,7 +288,7 @@
             this.scrollGreen.Size = new System.Drawing.Size(101, 15);
             this.scrollGreen.TabIndex = 15;
             this.scrollGreen.Value = 70;
-            this.scrollGreen.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_redraw);
+            this.scrollGreen.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRedraw);
             // 
             // label6
             // 
@@ -304,7 +307,7 @@
             this.scrollBlue.Size = new System.Drawing.Size(101, 15);
             this.scrollBlue.TabIndex = 13;
             this.scrollBlue.Value = 100;
-            this.scrollBlue.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_redraw);
+            this.scrollBlue.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRedraw);
             // 
             // label5
             // 
@@ -323,7 +326,7 @@
             this.btExport.TabIndex = 12;
             this.btExport.Text = "Export";
             this.btExport.UseVisualStyleBackColor = true;
-            this.btExport.Click += new System.EventHandler(this.btExport_Click);
+            this.btExport.Click += new System.EventHandler(this.onEventExport);
             // 
             // scrollBrightness
             // 
@@ -333,7 +336,7 @@
             this.scrollBrightness.Size = new System.Drawing.Size(101, 15);
             this.scrollBrightness.TabIndex = 10;
             this.scrollBrightness.Value = 255;
-            this.scrollBrightness.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scroll_redraw);
+            this.scrollBrightness.Scroll += new System.Windows.Forms.ScrollEventHandler(this.onScrollRedraw);
             // 
             // label4
             // 
@@ -385,7 +388,7 @@
             this.Controls.Add(this.splitContainer1);
             this.Name = "MainInterface";
             this.Text = "Fractal Generator";
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxFractal)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -403,7 +406,7 @@
 
         #endregion
 
-        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.PictureBox pictureBoxFractal;
         private System.Windows.Forms.Button btGenerate;
         private System.Windows.Forms.HScrollBar scrollContrast;
         private System.Windows.Forms.Label label1;

@@ -11,13 +11,11 @@ namespace TP_CS
 {
     public partial class ExportImage : Form
     {
-        FractalGenerator _fractalG;
         FractalParameters _fractalP;
         RenderingParameters _renderP;
 
-        public ExportImage(FractalGenerator fg, FractalParameters fp, RenderingParameters rp)
+        public ExportImage(FractalParameters fp, RenderingParameters rp)
         {
-            _fractalG = fg;
             _fractalP = fp;
             _renderP = rp;
 
@@ -41,6 +39,8 @@ namespace TP_CS
             int width, height;
             SaveFileDialog sfd;
             Bitmap im;
+            FractalGenerator fractalG;
+            String fileName;
 
             try
             {
@@ -53,7 +53,7 @@ namespace TP_CS
                 sfd.Filter = "Image png (*.png)|*.png|Image jpeg (*.jpg)|*.jpg";
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
-                    String name = sfd.FileName;
+                    fileName = sfd.FileName;
 
                     _fractalP.width = width;
                     _fractalP.height = height;
@@ -68,10 +68,12 @@ namespace TP_CS
                     this.Enabled = false;
                     this.tbHeight.Enabled = false;
                     this.tbWidth.Enabled = false;
-                    _fractalG.generate(_fractalP, null);
-                    im = _fractalG.getImage(_renderP);
+                    fractalG = new FractalGenerator(width, height);
+                    fractalG.generate(_fractalP, null);
+                    fractalG.generateImage(_renderP, null);
+                    im = fractalG.Image;
                     this.Enabled = true;
-                    im.Save(name);
+                    im.Save(fileName);
                     this.Close();
                 }
             }
