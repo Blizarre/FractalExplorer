@@ -97,7 +97,7 @@ namespace TP_CS
         /**
          * Julia value computation
          * param name="c" Julia initialization parameter
-         * param name="z" Pixel position in the complex plane() . Is modified.
+         * param name="z" Pixel position in the complex plane()
          * param name="N" Bailout value : minimum 2, higher number give better smoothing
          * param name="smoothing" Smooth the resulting image
          * */
@@ -105,7 +105,7 @@ namespace TP_CS
         {
             int iter = 0;
             double value;
-            float newReal; // temporary value for the real part of z
+            float newImag; // temporary value for the real part of z
 
             // If a one point |z_n| > N, the function is considered divergent. N=2 is enough as a mathematical proof
             // However higher number are used to get a better resolution in the smothing function
@@ -113,10 +113,10 @@ namespace TP_CS
             {
                 // z^{n+1} = z^n * z^n + c
                 // also : z.SquareAddIP(c);
-                // almost x2 speedup by inlining code, no property used (speedup?)
-                newReal = 2 * z._real * z._imag + c._real;
-                z._imag = z._real * z._real - z._imag * z._imag + c._imag;
-                z._real = newReal;
+                // almost x2 speedup by inlining code, no property used
+                newImag = 2 * z._real * z._imag + c._imag;
+                z._real = z._real * z._real - z._imag * z._imag + c._real;
+                z._imag = newImag;
             }
 
             value = (double)iter;
@@ -176,13 +176,32 @@ namespace TP_CS
             {
                 Parallel.For(0, _height, po, j =>
                 {
-                    Complex z = new Complex();
-                    for (int i = 0; i < _width; i++)
+                    Complex z;
+                    Complex c;
+                    switch (fp.type)
                     {
-                        z._real = i * mulX + baseX;
-                        z._imag = j * mulY + baseY;
-                        setValAt(i, j, ComputeValAt(z, fp.c, fp.highQuality, bailout, maxIter));
+                        case FractalType.MANDELBROT:
+                            c._imag = j * mulY + baseY;;
+                            for (int i = 0; i < _width; i++)
+                            {
+                                z = new Complex(0, 0);
+                                c._real = i * mulX + baseX;
+                                setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
+                            }
+                            break;
+                        case FractalType.JULIA:
+                            c = fp.c;
+                            for (int i = 0; i < _width; i++) {
+                                z._imag = j * mulY + baseY;
+                                z._real = i * mulX + baseX;
+                                setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
+                            }
+                            break;
+                        default:
+                            throw new System.NotImplementedException(fp.type + "is not implemented");
                     }
+                    
+
                 });
             }
             catch (OperationCanceledException e) { throw e; }
@@ -223,9 +242,11 @@ namespace TP_CS
         }
     }
 
+    public enum FractalType { JULIA, MANDELBROT };
 
     public struct FractalParameters
     {
+        public FractalType type;
         public Complex c; // Initialization of the julia function
         public RectangleF viewPort; // view of the fractal
         public int width; // width in pixel

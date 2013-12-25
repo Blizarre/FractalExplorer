@@ -83,6 +83,9 @@ namespace TP_CS
             InitializeComponent();
             _fractalG = new FractalGenerator(pictureBoxFractal.Size);
             pictureBoxGraphics = pictureBoxFractal.CreateGraphics();
+            comboFractType.Items.Add(FractalType.JULIA);
+            comboFractType.Items.Add(FractalType.MANDELBROT);
+            comboFractType.SelectedItem = FractalType.JULIA;
             DataGenerationDone += DataGeneratedOk;
             _viewPort = new RectangleF(-1, -1, 2, 2);
             regenerate();
@@ -93,7 +96,7 @@ namespace TP_CS
         {
             FractalParameters fp = getFractalParam();
             labValC.Text = String.Format("c = {0} + {1}i", fp.c._real, fp.c._imag);
-            
+
             // Used for benchmarking
             _dateStartGeneration = DateTime.Now;
 
@@ -117,7 +120,7 @@ namespace TP_CS
                 }
                 catch (OperationCanceledException) { return; }
                 DataGenerationDone(imageChanged);
-                });
+            });
             accessThread.ReleaseMutex();
         }
 
@@ -183,13 +186,13 @@ namespace TP_CS
             rp.contrast = (float)scrollContrast.Value;
 
             rp.GreenExp = ckExpGreen.Checked;
-            rp.RedExp   = ckExpRed.Checked;
-            rp.BlueExp  = ckExpBlue.Checked;
-            
-            rp.RedParam   = (float)(scrollRed.Value / 100.0);
-            rp.BlueParam  = (float)(scrollBlue.Value / 100.0);
+            rp.RedExp = ckExpRed.Checked;
+            rp.BlueExp = ckExpBlue.Checked;
+
+            rp.RedParam = (float)(scrollRed.Value / 100.0);
+            rp.BlueParam = (float)(scrollBlue.Value / 100.0);
             rp.GreenParam = (float)(scrollGreen.Value / 100.0);
-            
+
             return rp;
         }
 
@@ -207,9 +210,11 @@ namespace TP_CS
 
             // Keep the aspect ratio at 1:1
             _viewPort.Width = ((float)pictureBoxFractal.Size.Width / pictureBoxFractal.Size.Height) * _viewPort.Height;
-            
+
             // Any modification of the export struct must not affect current viewport
             fp.viewPort = _viewPort.clone();
+
+            fp.type = (FractalType)comboFractType.SelectedItem;
 
             // c between (-1,-1) and (1,1)
             fp.c = new Complex((float)scrollCR.Value / 100.0f, (float)scrollCI.Value / 100.0f);
@@ -231,7 +236,7 @@ namespace TP_CS
         {
             drawImage();
         }
-        
+
         private void onScrollRedraw(object sender, ScrollEventArgs e)
         {
             drawImage();
@@ -257,6 +262,22 @@ namespace TP_CS
         private void onPictureBoxFractalRepaint(object sender, PaintEventArgs e)
         {
             drawImage();
+        }
+
+        private void onChangeFractalType(object sender, EventArgs e)
+        {
+            if ((FractalType)comboFractType.SelectedItem != FractalType.JULIA)
+            {
+                scrollCI.Enabled = false;
+                scrollCR.Enabled = false;
+            }
+            else
+            {
+                scrollCI.Enabled = true;
+                scrollCR.Enabled = true;
+            }
+            if (cbAutoRegenerate.Checked)
+                regenerate();
         }
     }
 }

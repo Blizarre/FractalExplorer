@@ -59,5 +59,11 @@ namespace TP_CS
             return new Complex(this._real + c2._real, this._imag + c2._imag);
         }
 
+
+        public Complex MyClone()
+        {
+            return new Complex(this._real, this._imag);
+        }
+
     }
 }

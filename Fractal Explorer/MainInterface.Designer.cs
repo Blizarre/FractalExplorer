@@ -58,6 +58,7 @@
             this.labBench1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.labBenchMark2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.labValC = new System.Windows.Forms.ToolStripStatusLabel();
+            this.comboFractType = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxFractal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -68,12 +69,12 @@
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // fractalPictureBox
+            // pictureBoxFractal
             // 
             this.pictureBoxFractal.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.pictureBoxFractal.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBoxFractal.Location = new System.Drawing.Point(0, 0);
-            this.pictureBoxFractal.Name = "fractalPictureBox";
+            this.pictureBoxFractal.Name = "pictureBoxFractal";
             this.pictureBoxFractal.Size = new System.Drawing.Size(795, 675);
             this.pictureBoxFractal.TabIndex = 0;
             this.pictureBoxFractal.TabStop = false;
@@ -169,6 +170,7 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.comboFractType);
             this.groupBox2.Controls.Add(this.cb_hq);
             this.groupBox2.Controls.Add(this.cbAutoRegenerate);
             this.groupBox2.Controls.Add(this.scrollCI);
@@ -178,7 +180,7 @@
             this.groupBox2.Controls.Add(this.label3);
             this.groupBox2.Location = new System.Drawing.Point(12, 12);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(116, 183);
+            this.groupBox2.Size = new System.Drawing.Size(116, 208);
             this.groupBox2.TabIndex = 13;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Generation";
@@ -219,7 +221,7 @@
             this.groupBox1.Controls.Add(this.scrollBrightness);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.label4);
-            this.groupBox1.Location = new System.Drawing.Point(12, 211);
+            this.groupBox1.Location = new System.Drawing.Point(12, 226);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(117, 303);
             this.groupBox1.TabIndex = 12;
@@ -380,6 +382,15 @@
             this.labValC.Name = "labValC";
             this.labValC.Size = new System.Drawing.Size(0, 17);
             // 
+            // comboFractType
+            // 
+            this.comboFractType.FormattingEnabled = true;
+            this.comboFractType.Location = new System.Drawing.Point(7, 183);
+            this.comboFractType.Name = "comboFractType";
+            this.comboFractType.Size = new System.Drawing.Size(104, 21);
+            this.comboFractType.TabIndex = 10;
+            this.comboFractType.SelectedIndexChanged += new System.EventHandler(this.onChangeFractalType);
+            // 
             // MainInterface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -436,5 +447,6 @@
         private System.Windows.Forms.CheckBox ckExpBlue;
         private System.Windows.Forms.CheckBox ckExpGreen;
         private System.Windows.Forms.CheckBox ckExpRed;
+        private System.Windows.Forms.ComboBox comboFractType;
     }
 }
