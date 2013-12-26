@@ -193,6 +193,15 @@ namespace TP_CS
                     Complex c;
                     switch (fp.type)
                     {
+                        case FractalType.SIMON:
+                            z._imag = j * mulY + baseY;
+                            c = new Complex();
+                            for (int i = 0; i < _width; i++)
+                            {
+                                z._real = i * mulX + baseX;
+                                setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
+                            }
+                            break;
                         case FractalType.MANDELBROT:
                             z = new Complex(0, 0);
                             c._imag = j * mulY + baseY;;
@@ -204,8 +213,8 @@ namespace TP_CS
                             break;
                         case FractalType.JULIA:
                             c = fp.c;
-                            for (int i = 0; i < _width; i++) {
-                                z._imag = j * mulY + baseY;
+                            z._imag = j * mulY + baseY;
+                            for (int i = 0; i < _width; i++) {                                
                                 z._real = i * mulX + baseX;
                                 setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
                             }
@@ -259,7 +268,7 @@ namespace TP_CS
         }
     }
 
-    public enum FractalType { JULIA, MANDELBROT };
+    public enum FractalType { JULIA, MANDELBROT, SIMON };
 
     public struct FractalParameters
     {
