@@ -279,5 +279,10 @@ namespace TP_CS
             if (cbAutoRegenerate.Checked)
                 regenerate();
         }
+
+        private void onMouseMove(object sender, MouseEventArgs e)
+        {
+            labBenchMark2.Text = String.Format("({0:D}, {1:D}) = {2:F1}",  e.X , e.Y, _fractalG.getNbIterations(e.X, e.Y));
+        }
     }
 }

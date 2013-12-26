@@ -119,7 +119,10 @@ namespace TP_CS
                 z._imag = newImag;
             }
 
-            value = (double)iter;
+            if(iter == maxIter)
+                value = maxIter;
+            else 
+                value = (double)iter;
 
             //Smoothing :
             // realResult = n - log_p(log(|z_n|/log(N))
@@ -127,9 +130,19 @@ namespace TP_CS
             // n = iteration number achieved during bailout detection
             // N = bailout, bigger number, better results.
             if (smoothing)
-                value -= Math.Log(Math.Log(Math.Sqrt(z.AbsSq()) / Math.Log(N), 2));
+            {
+                double val = Math.Log(Math.Sqrt(z.AbsSq()) / Math.Log(N));
+                if (val <= 0)
+                    return -1000;
+                else
+                    value -= Math.Log(val, 2);
+            }
 
             // Do it right away, will speed up the drawing image process
+            // Warning : If the bailout occured at the first iteration (Mandelbrot set mainly), 
+            // the value will be <= 0, and Log(0) = NaN... NaN is not affected by any further operations, 
+            // and stay NaN, or black in images. This is by design, to keep the distinctive look of mandelbrot
+            // fractals.
             return (float)Math.Log(value);
         }
 
@@ -181,10 +194,10 @@ namespace TP_CS
                     switch (fp.type)
                     {
                         case FractalType.MANDELBROT:
+                            z = new Complex(0, 0);
                             c._imag = j * mulY + baseY;;
                             for (int i = 0; i < _width; i++)
                             {
-                                z = new Complex(0, 0);
                                 c._real = i * mulX + baseX;
                                 setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
                             }
@@ -229,8 +242,6 @@ namespace TP_CS
             return ret;
         }
 
-
-
         protected float getValAt(int x, int y)
         {
             return _tabResultComputation[x + y * _width];
@@ -239,6 +250,12 @@ namespace TP_CS
         protected void setValAt(int x, int y, float val)
         {
             _tabResultComputation[x + y * _width] = val;
+        }
+
+        public double getNbIterations(int x, int y)
+        {
+            // The "real" number of iterations has been "Log"-ed previously for performance reasons.
+            return Math.Exp(getValAt(x, y));
         }
     }
 

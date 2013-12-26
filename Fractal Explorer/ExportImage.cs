@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -54,9 +55,9 @@ namespace TP_CS
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
                     fileName = sfd.FileName;
-
-                    _fractalP.width = width;
-                    _fractalP.height = height;
+                    // Forced AA * 4 (size *2 on with, Height)
+                    _fractalP.width = width * 2;
+                    _fractalP.height = height * 2;
 
                     _fractalP.viewPort.X = float.Parse(txtViewPosX.Text);
                     _fractalP.viewPort.Y = float.Parse(txtViewPosY.Text);
@@ -73,7 +74,15 @@ namespace TP_CS
                     fractalG.generateImage(_renderP, null);
                     im = fractalG.Image;
                     this.Enabled = true;
-                    im.Save(fileName);
+                    // 2x High quality downscaling
+
+                    Bitmap tmpImage = new Bitmap(width, height, im.PixelFormat);
+                    Graphics handle = Graphics.FromImage(tmpImage);
+                    handle.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    handle.DrawImage(fractalG.Image, 0, 0, width, height);
+                    // Save the image
+                    tmpImage.Save(fileName);
+
                     this.Close();
                 }
             }
