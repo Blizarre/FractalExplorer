@@ -83,9 +83,10 @@ namespace TP_CS
             InitializeComponent();
             _fractalG = new FractalGenerator(pictureBoxFractal.Size);
             pictureBoxGraphics = pictureBoxFractal.CreateGraphics();
-            comboFractType.Items.Add(FractalType.JULIA);
-            comboFractType.Items.Add(FractalType.MANDELBROT);
-            comboFractType.SelectedItem = FractalType.JULIA;
+            foreach(FractalType ft in Enum.GetValues(typeof(FractalType))) {
+                comboFractType.Items.Add(ft);
+            }
+            comboFractType.SelectedIndex = 0;
             DataGenerationDone += DataGeneratedOk;
             _viewPort = new RectangleF(-1, -1, 2, 2);
             regenerate();
@@ -266,15 +267,18 @@ namespace TP_CS
 
         private void onChangeFractalType(object sender, EventArgs e)
         {
-            if ((FractalType)comboFractType.SelectedItem != FractalType.JULIA)
+            // Todo : encode the need of parameter in the FractalType itself
+            if ((FractalType)comboFractType.SelectedItem == FractalType.MANDELBROT)
             {
                 scrollCI.Enabled = false;
                 scrollCR.Enabled = false;
+                labValC.Visible = false;
             }
             else
             {
                 scrollCI.Enabled = true;
                 scrollCR.Enabled = true;
+                labValC.Visible = true;
             }
             if (cbAutoRegenerate.Checked)
                 regenerate();
