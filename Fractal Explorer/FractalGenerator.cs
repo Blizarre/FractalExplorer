@@ -95,9 +95,9 @@ namespace TP_CS
 
 
         /**
-         * Julia value computation
-         * param name="c" Julia initialization parameter
-         * param name="z" Pixel position in the complex plane()
+         * Julia/Mandelbrot value computation
+         * param name="c" Julia initialization parameter, Or position for Mandelbrot
+         * param name="z" Pixel position in the complex plane for Julia, (0,0) for Mandelbrot
          * param name="N" Bailout value : minimum 2, higher number give better smoothing
          * param name="smoothing" Smooth the resulting image
          * */
@@ -147,6 +147,63 @@ namespace TP_CS
         }
 
         /**
+ * Burning ship value computation
+ * param name="c" Position in the complex plane for Mandelbrot
+ * param name="N" Bailout value : minimum 2, higher number give better smoothing
+ * param name="smoothing" Smooth the resulting image
+ * */
+        private float ComputeAbsValAt(Complex c, bool smoothing, int N, int maxIter)
+        {
+            Complex z = new Complex(0,0);
+            int iter = 0;
+            double value;
+            float newImag; // temporary value for the real part of z
+
+            // If a one point |z_n| > N, the function is considered divergent. N=2 is enough as a mathematical proof
+            // However higher number are used to get a better resolution in the smothing function
+            for (iter = 0; iter < maxIter && z.AbsSq() < N * N; iter++)
+            {
+                // Burning ship "special trick"
+                z._real = Math.Abs(z._real);
+                z._imag = Math.Abs(z._imag);
+
+                // z^{n+1} = z^n * z^n + c
+                // also : z.SquareAddIP(c);
+                // almost x2 speedup by inlining code, no property used
+                newImag = 2 * z._real * z._imag + c._imag;
+                z._real = z._real * z._real - z._imag * z._imag + c._real;
+                z._imag = newImag;
+            }
+
+            if (iter == maxIter)
+                value = maxIter;
+            else
+                value = (double)iter;
+
+            //Smoothing :
+            // realResult = n - log_p(log(|z_n|/log(N))
+            // p = 2 (exponent of z in the julia formulae)
+            // n = iteration number achieved during bailout detection
+            // N = bailout, bigger number, better results.
+            if (smoothing)
+            {
+                double val = Math.Log(Math.Sqrt(z.AbsSq()) / Math.Log(N));
+                if (val <= 0)
+                    return -1000;
+                else
+                    value -= Math.Log(val, 2);
+            }
+
+            // Do it right away, will speed up the drawing image process
+            // Warning : If the bailout occured at the first iteration (Mandelbrot set mainly), 
+            // the value will be <= 0, and Log(0) = NaN... NaN is not affected by any further operations, 
+            // and stay NaN, or black in images. This is by design, to keep the distinctive look of mandelbrot
+            // fractals.
+            return (float)Math.Log(value);
+        }
+
+
+        /**
          * Generate the data. return true if the Image property has been changed.
          **/
         public bool generate(FractalParameters fp, CancellationToken? ct)
@@ -189,22 +246,22 @@ namespace TP_CS
             {
                 Parallel.For(0, _height, po, j =>
                 {
-                    Complex z;
-                    Complex c;
+                    Complex z, c;
                     switch (fp.type)
                     {
-                        case FractalType.SIMON:
-                            z._imag = j * mulY + baseY;
-                            c = new Complex();
+                            // TODO: Ugly, create a Fractal object subclassed by JULIA, MANDELBROT et al.
+                            // with : "Name", "Values(line)" (to limit the number of function call), etc.
+                        case FractalType.BURNING_SHIP:
+                            c._imag = j * mulY + baseY;
                             for (int i = 0; i < _width; i++)
                             {
-                                z._real = i * mulX + baseX;
-                                setValAt(i, j, ComputeValAt(z, c, fp.highQuality, bailout, maxIter));
+                                c._real = i * mulX + baseX;
+                                setValAt(i, j, ComputeAbsValAt(c, fp.highQuality, bailout, maxIter));
                             }
                             break;
                         case FractalType.MANDELBROT:
                             z = new Complex(0, 0);
-                            c._imag = j * mulY + baseY;;
+                            c._imag = j * mulY + baseY;
                             for (int i = 0; i < _width; i++)
                             {
                                 c._real = i * mulX + baseX;
@@ -268,7 +325,7 @@ namespace TP_CS
         }
     }
 
-    public enum FractalType { JULIA, MANDELBROT, SIMON };
+    public enum FractalType { JULIA, MANDELBROT, BURNING_SHIP };
 
     public struct FractalParameters
     {
